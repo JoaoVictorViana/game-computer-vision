@@ -1,0 +1,9 @@
+[submodule "projects/front"]
+	path = projects/front
+	url = git@github.com:JoaoVictorViana/game-computer-vision-front.git
+[submodule "projects/core-api"]
+	path = projects/core-api
+	url = git@github.com:JoaoVictorViana/game-computer-vision-core-api.git
+[submodule "projects/service"]
+	path = projects/service
+	url = git@github.com:JoaoVictorViana/game-computer-vision-service.git

@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  mariadb:
+    image: mariadb:latest
+    environment:
+      MARIADB_USER: ${DB_USER}
+      MARIADB_ROOT_PASSWORD: ${DB_PASS}
+    volumes:
+      - ./.docker/services/mariadb/init:/docker-entrypoint-initdb.d
+      - ./.docker/volumes/mariadb:/var/lib/mysql
+    ports:
+      - 3306:3306
+    networks:
+      - game-network
+
+  core-api:
+    build:
+      context: ./projects/core-api/
+    restart: always
+    ports:
+      - 8000:8000
+    volumes:
+      - ./projects/core-api/:/app
+    command: ["php", "artisan", "serve", "--host=0.0.0.0"]
+    depends_on:
+      - mariadb
+    networks:
+      - game-network
+
+  ia-service:
+    build:
+      context: ./projects/service/
+    restart: always
+    depends_on:
+      - mariadb
+    volumes:
+      - ./projects/service:/app
+    command: [ "python3", "-m" , "flask", "--app", "server", "--debug", "run", "--host=0.0.0.0"]
+    ports:
+      - 5000:5000
+    networks:
+      - game-network
+
+  front:
+    build:
+      context: ./projects/front
+    restart: always
+    volumes:
+      - ./projects/front/:/home/node/project
+    command: ["npm", "run", "dev"]
+    depends_on:
+      - core-api
+      - ia-service
+    ports:
+      - 3000:3000
+    networks:
+      - game-network
+
+  nginx:
+    build:
+      context: ./.docker/services/nginx/      
+    container_name: game-nginx
+    restart: unless-stopped
+    volumes:
+      - ./.docker/services/nginx/:/etc/nginx/conf.d/
+    depends_on:
+      - front
+    ports:
+      - 80:80
+    networks:
+      - game-network
+
+networks:
+  game-network:
+    driver: bridge
